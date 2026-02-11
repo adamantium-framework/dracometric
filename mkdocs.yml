@@ -1,0 +1,59 @@
+site_name: DRACO METRIC
+site_description: High-performance WireGuard VPN server aggregator API
+site_author: Adamantium Security
+repo_url: https://github.com/adamantium/draco-metric
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to light mode
+    - scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to dark mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+    - content.tabs.link
+    - search.highlight
+    - toc.follow
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Quick Start: quickstart.md
+  - Guide:
+      - Installation: installation.md
+      - Configuration: configuration.md
+      - Architecture: architecture.md
+  - API Reference: api-reference.md
+  - Security: security.md
+  - Deployment:
+      - Development: deployment/development.md
+      - Production: deployment/production.md
+      - Container: deployment/container.md
+      - Reverse Proxy: deployment/reverse-proxy.md
