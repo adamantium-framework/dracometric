@@ -88,6 +88,9 @@ def get_vpn_service(
         )
 
 
+# Minimum load threshold: servers reporting load 0-3 are considered non-operational
+MIN_OPERATIONAL_LOAD = 3
+
 # --- API Endpoints ---
 # IMPORTANT: Specific routes must come BEFORE parameterized routes like {country_code}
 
@@ -212,12 +215,11 @@ async def get_top_servers(
     """
     Retrieves the top servers with the best performance metrics.
 
+    Servers with load <= 3 are excluded as non-operational.
+
     Servers are ranked by:
     1. **Latency** (if available) - lower is better
     2. **Load** (fallback) - lower is better
-
-    For NordVPN, servers are sorted by load percentage.
-    For Surfshark, servers are returned in API order (no load data available).
 
     Use the optional `country_code` parameter to filter results by country.
     """
@@ -238,13 +240,16 @@ async def get_top_servers(
     else:
         servers = await service.get_servers()
 
+    # Filter out non-operational servers (load 0-3 means server is not active)
+    operational = [s for s in servers if s.load is not None and s.load > MIN_OPERATIONAL_LOAD]
+
     # Sort by latency first (if available), then by load
     def performance_key(server: VPNServer) -> tuple:
         latency = server.latency if server.latency is not None else float("inf")
         load = server.load if server.load is not None else float("inf")
         return (latency, load)
 
-    sorted_servers = sorted(servers, key=performance_key)
+    sorted_servers = sorted(operational, key=performance_key)
     top_servers = sorted_servers[:limit]
 
     logger.info(f"Returning top {len(top_servers)} servers")
@@ -314,11 +319,14 @@ async def measure_server_latency(
     else:
         servers = await service.get_servers()
 
+    # Filter out non-operational servers (load 0-3 means server is not active)
+    operational = [s for s in servers if s.load is not None and s.load > MIN_OPERATIONAL_LOAD]
+
     # Limit servers to measure (0 = all)
     if limit == 0:
-        servers_to_measure = servers
+        servers_to_measure = operational
     else:
-        servers_to_measure = servers[:limit]
+        servers_to_measure = operational[:limit]
     total = len(servers_to_measure)
 
     # Measure latency
@@ -420,6 +428,9 @@ async def get_fastest_servers(
             )
     else:
         servers = await service.get_servers()
+
+    # Filter out non-operational servers (load 0-3 means server is not active)
+    servers = [s for s in servers if s.load is not None and s.load > MIN_OPERATIONAL_LOAD]
 
     # Exclude countries if specified
     if exclude:

@@ -10,7 +10,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import JSONResponse
 
 from app.middleware import APIKeyMiddleware, RateLimitMiddleware
 from app.routers import vpn
@@ -58,7 +58,7 @@ app = FastAPI(
     docs_url="/docs" if settings.debug else None,
     redoc_url="/redoc" if settings.debug else None,
     openapi_url="/openapi.json" if settings.debug else None,
-    default_response_class=ORJSONResponse,  # Faster JSON serialization
+    default_response_class=JSONResponse,
 )
 
 
@@ -116,7 +116,7 @@ async def add_security_headers(request: Request, call_next):
 async def vpn_api_error_handler(request: Request, exc: VPNAPIError):
     """Handle external VPN API failures."""
     logger.error(f"VPN API error: {request.url.path} - {exc}")
-    return ORJSONResponse(
+    return JSONResponse(
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         content={"error": "Service Unavailable", "message": "VPN data temporarily unavailable."},
     )
@@ -126,7 +126,7 @@ async def vpn_api_error_handler(request: Request, exc: VPNAPIError):
 async def vpn_service_error_handler(request: Request, exc: VPNServiceError):
     """Handle internal VPN service errors."""
     logger.error(f"VPN service error: {request.url.path} - {exc}")
-    return ORJSONResponse(
+    return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"error": "Internal Server Error", "message": "An error occurred."},
     )
@@ -141,7 +141,7 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
         {"loc": e.get("loc"), "msg": e.get("msg"), "type": e.get("type")}
         for e in exc.errors()
     ]
-    return ORJSONResponse(
+    return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={"error": "Validation Error", "details": errors},
     )
@@ -151,14 +151,14 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
 async def general_exception_handler(request: Request, exc: Exception):
     """Catch-all handler - never expose internal details."""
     logger.exception(f"Unhandled exception: {request.url.path}")
-    return ORJSONResponse(
+    return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"error": "Internal Server Error", "message": "An unexpected error occurred."},
     )
 
 
 # --- Health Check ---
-@app.get("/health", tags=["Health"], response_class=ORJSONResponse)
+@app.get("/health", tags=["Health"], response_class=JSONResponse)
 async def health_check():
     """Lightweight health check for load balancers."""
     return {"status": "healthy", "version": settings.app_version}
